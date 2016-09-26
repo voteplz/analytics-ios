@@ -10,6 +10,8 @@
 #import "SEGStorage.h"
 #import "SEGFileStorage.h"
 #import "SEGUserDefaultsStorage.h"
+#import "WFApplicationContextPrivate.h"
+#import "WFApplicationContextProvider.h"
 #import <objc/runtime.h>
 
 static SEGAnalytics *__sharedInstance = nil;
@@ -130,12 +132,14 @@ NSString *const kSEGAnonymousIdFilename = @"segment.anonymousId";
         [nc addObserver:self selector:@selector(onAppForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
 
         // Pass through for application state change events
-        for (NSString *name in @[ UIApplicationDidEnterBackgroundNotification,
+        WFApplicationContext *context = [WFApplicationContext sharedContext];
+        id<WFApplicationContextProvider> provider = context.provider;
+        for (NSString *name in @[ [provider notificationNameForApplicationStateEvent:WFApplicationDidEnterBackgroundEvent applicationContext:context],
                                   UIApplicationDidFinishLaunchingNotification,
-                                  UIApplicationWillEnterForegroundNotification,
+                                  [provider notificationNameForApplicationStateEvent:WFApplicationWillEnterForegroundEvent applicationContext:context],
                                   UIApplicationWillTerminateNotification,
-                                  UIApplicationWillResignActiveNotification,
-                                  UIApplicationDidBecomeActiveNotification ]) {
+                                  [provider notificationNameForApplicationStateEvent:WFApplicationWillResignActiveEvent applicationContext:context],
+                                  [provider notificationNameForApplicationStateEvent:WFApplicationDidBecomeActiveEvent applicationContext:context] ]) {
             [nc addObserver:self selector:@selector(handleAppStateNotification:) name:name object:nil];
         }
 
@@ -215,18 +219,20 @@ NSString *const SEGBuildKey = @"SEGBuildKey";
     static NSDictionary *selectorMapping;
     static dispatch_once_t selectorMappingOnce;
     dispatch_once(&selectorMappingOnce, ^{
+        WFApplicationContext *context = [WFApplicationContext sharedContext];
+        id<WFApplicationContextProvider> provider = context.provider;
         selectorMapping = @{
             UIApplicationDidFinishLaunchingNotification :
                 NSStringFromSelector(@selector(applicationDidFinishLaunching:)),
-            UIApplicationDidEnterBackgroundNotification :
+            [provider notificationNameForApplicationStateEvent:WFApplicationDidEnterBackgroundEvent applicationContext:context] :
                 NSStringFromSelector(@selector(applicationDidEnterBackground)),
-            UIApplicationWillEnterForegroundNotification :
+            [provider notificationNameForApplicationStateEvent:WFApplicationWillEnterForegroundEvent applicationContext:context] :
                 NSStringFromSelector(@selector(applicationWillEnterForeground)),
             UIApplicationWillTerminateNotification :
                 NSStringFromSelector(@selector(applicationWillTerminate)),
-            UIApplicationWillResignActiveNotification :
+            [provider notificationNameForApplicationStateEvent:WFApplicationWillResignActiveEvent applicationContext:context] :
                 NSStringFromSelector(@selector(applicationWillResignActive)),
-            UIApplicationDidBecomeActiveNotification :
+            [provider notificationNameForApplicationStateEvent:WFApplicationDidBecomeActiveEvent applicationContext:context] :
                 NSStringFromSelector(@selector(applicationDidBecomeActive))
         };
     });
