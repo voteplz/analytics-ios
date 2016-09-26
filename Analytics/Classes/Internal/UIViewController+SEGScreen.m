@@ -2,7 +2,7 @@
 #import <objc/runtime.h>
 #import "SEGAnalytics.h"
 #import "SEGAnalyticsUtils.h"
-
+#import "WFApplicationContext.h"
 
 @implementation UIViewController (SEGScreen)
 
@@ -38,7 +38,7 @@
 
 + (UIViewController *)seg_topViewController
 {
-    UIViewController *root = [UIApplication sharedApplication].delegate.window.rootViewController;
+    UIViewController *root = [[[WFApplicationContext sharedContext] keyWindow] rootViewController];
     return [self seg_topViewController:root];
 }
 

@@ -9,6 +9,7 @@
 #import "SEGLocation.h"
 #import "SEGHTTPClient.h"
 #import "SEGStorage.h"
+#import "WFBackgroundAssertion.h"
 
 #if TARGET_OS_IOS
 #import <CoreTelephony/CTCarrier.h>
@@ -64,7 +65,7 @@ static BOOL GetAdTrackingEnabled()
 @property (nonatomic, strong) NSMutableArray *queue;
 @property (nonatomic, strong) NSDictionary *cachedStaticContext;
 @property (nonatomic, strong) NSURLSessionUploadTask *batchRequest;
-@property (nonatomic, assign) UIBackgroundTaskIdentifier flushTaskID;
+@property (nonatomic, strong) WFBackgroundAssertion *flushAssertion;
 @property (nonatomic, strong) SEGBluetooth *bluetooth;
 @property (nonatomic, strong) SEGReachability *reachability;
 @property (nonatomic, strong) SEGLocation *location;
@@ -106,7 +107,6 @@ static BOOL GetAdTrackingEnabled()
         [self.reachability startNotifier];
         self.cachedStaticContext = [self staticContext];
         self.serialQueue = seg_dispatch_queue_create_specific("io.segment.analytics.segmentio", DISPATCH_QUEUE_SERIAL);
-        self.flushTaskID = UIBackgroundTaskInvalid;
 
 #if !TARGET_OS_TV
         // Check for previous queue/track data in NSUserDefaults and remove if present
@@ -288,7 +288,7 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
 {
     [self endBackgroundTask];
 
-    self.flushTaskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+    self.flushAssertion = [WFBackgroundAssertion backgroundAssertionWithName:@"Segment" expirationHandler:^{
         [self endBackgroundTask];
     }];
 }
@@ -296,9 +296,9 @@ static CTTelephonyNetworkInfo *_telephonyNetworkInfo;
 - (void)endBackgroundTask
 {
     [self dispatchBackgroundAndWait:^{
-        if (self.flushTaskID != UIBackgroundTaskInvalid) {
-            [[UIApplication sharedApplication] endBackgroundTask:self.flushTaskID];
-            self.flushTaskID = UIBackgroundTaskInvalid;
+        if (self.flushAssertion) {
+            [self.flushAssertion end];
+            self.flushAssertion = nil;
         }
     }];
 }
