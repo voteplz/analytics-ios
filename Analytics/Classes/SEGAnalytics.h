@@ -55,11 +55,6 @@ typedef NSMutableURLRequest * (^SEGRequestFactory)(NSURL *);
 
 
 /**
- * Whether the analytics client should record bluetooth information. If `YES`, please make sure to add a description for `NSBluetoothPeripheralUsageDescription` in your `Info.plist` explaining explaining why your app is accessing Bluetooth APIs. `NO` by default.
- */
-@property (nonatomic, assign) BOOL shouldUseBluetooth;
-
-/**
  * Whether the analytics client should automatically make a screen call when a view controller is added to a view hierarchy. Because the underlying implementation uses method swizzling, we recommend initializing the analytics client as early as possible (before any screens are displayed), ideally during the Application delegate's applicationDidFinishLaunching method.
  */
 @property (nonatomic, assign) BOOL recordScreenViews;
